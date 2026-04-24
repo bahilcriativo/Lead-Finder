@@ -17,28 +17,23 @@ export default function App() {
   const [searchType, setSearchType] = useState<'google' | 'maps'>('google');
 
   useEffect(() => {
-    // Initial health check
+    // Initial health check - non blocking
     axios.get('/api/health')
-      .then(res => console.log('Server is healthy:', res.data))
-      .catch(err => console.error('Server health check failed:', err));
+      .then(res => console.log('Server is alive:', res.data))
+      .catch(err => {
+        console.warn('Server health check failed (might be expected in some envs):', err.message);
+        // We don't toast error here because it might be a temporary hiccup or false positive
+      });
   }, []);
 
   const handleSearch = async (params: SearchParams) => {
-    console.log('Initiating search with params:', params);
+    console.log('Search triggered:', params);
     setIsLoading(true);
     setSearchType(params.type);
     
     try {
-      // Check if server is up
-      try {
-        await axios.get('/api/health');
-      } catch (e) {
-        console.error('Server unreachable:', e);
-        throw new Error('O servidor backend não está respondendo. Tente recarregar a página.');
-      }
-
       const response = await axios.post('/api/search', params);
-      console.log('Search response received:', response.data);
+      console.log('Search successful:', response.data);
       
       let data: any[] = [];
       if (params.type === 'google') {

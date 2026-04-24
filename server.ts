@@ -18,17 +18,21 @@ async function startServer() {
   app.use(cors());
   app.use(express.json());
 
-  // Health check
-  app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', environment: process.env.NODE_ENV });
+  // API Routes
+  const apiRouter = express.Router();
+
+  apiRouter.get('/health', (req, res) => {
+    console.log('Health check requested');
+    res.json({ 
+      status: 'ok', 
+      time: new Date().toISOString(),
+      env: process.env.NODE_ENV || 'development'
+    });
   });
 
-  // API Route for Searching
-  app.post('/api/search', async (req, res) => {
-    console.log('Incoming search request:', req.body);
+  apiRouter.post('/search', async (req, res) => {
+    console.log('Search request received:', req.body);
     const { token, type, audience, region, ddi, source } = req.body;
-
-    // Use the provided token or fallback to environment variable
     const apiKey = token || process.env.SERPER_API_KEY;
 
     if (!apiKey) {
@@ -36,10 +40,8 @@ async function startServer() {
     }
 
     try {
-      // Logic from user: "público" "região" "DDI" site:origem
-      // Example: "pizzaria" "Orlando" "+55" site:instagram.com
       let query = `"${audience}" "${region}" "${ddi}"`;
-      if (source !== 'All') {
+      if (source && source !== 'All') {
         const domainMap: Record<string, string> = {
           'Instagram': 'instagram.com',
           'Facebook': 'facebook.com',
@@ -50,7 +52,7 @@ async function startServer() {
         query += ` site:${domain}`;
       }
 
-      console.log('Performing query:', query);
+      console.log('Executing Serper query:', query);
 
       const endpoint = type === 'maps' ? 'https://google.serper.dev/maps' : 'https://google.serper.dev/search';
       
@@ -67,10 +69,12 @@ async function startServer() {
 
       res.json(response.data);
     } catch (error: any) {
-      console.error('Search error:', error.response?.data || error.message);
-      res.status(500).json({ error: 'Erro ao realizar a busca. Verifique seu token e tente novamente.' });
+      console.error('Serper search error:', error.response?.data || error.message);
+      res.status(500).json({ error: 'Erro na busca. Verifique seu token.' });
     }
   });
+
+  app.use('/api', apiRouter);
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {
