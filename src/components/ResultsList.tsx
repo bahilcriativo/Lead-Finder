@@ -13,7 +13,13 @@ export const ResultsList: React.FC<Props> = ({ results, type }) => {
   if (results.length === 0) return null;
 
   const exportToCSV = () => {
+    console.log('Exporting results to CSV. Count:', results.length);
     try {
+      if (!results || results.length === 0) {
+        toast.error('Não há resultados para exportar.');
+        return;
+      }
+
       let csvContent = "";
       let headers = [];
       let rows = [];
@@ -41,6 +47,8 @@ export const ResultsList: React.FC<Props> = ({ results, type }) => {
         ...rows.map(row => row.join(','))
       ].join('\n');
 
+      console.log('CSV content generated, size:', csvContent.length);
+
       const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
@@ -50,12 +58,17 @@ export const ResultsList: React.FC<Props> = ({ results, type }) => {
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
       
-      toast.success('Arquivo CSV gerado com sucesso!');
+      // Cleanup
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 100);
+      
+      toast.success('Arquivo CSV baixado!');
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('Erro ao exportar os dados.');
+      toast.error('Erro ao gerar o arquivo CSV.');
     }
   };
 

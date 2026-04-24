@@ -18,8 +18,14 @@ async function startServer() {
   app.use(cors());
   app.use(express.json());
 
+  // Health check
+  app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', environment: process.env.NODE_ENV });
+  });
+
   // API Route for Searching
   app.post('/api/search', async (req, res) => {
+    console.log('Incoming search request:', req.body);
     const { token, type, audience, region, ddi, source } = req.body;
 
     // Use the provided token or fallback to environment variable

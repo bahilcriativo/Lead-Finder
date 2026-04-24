@@ -9,18 +9,36 @@ import { ResultsList } from './components/ResultsList.tsx';
 import { SearchParams } from './lib/types.ts';
 import axios from 'axios';
 import { Toaster, toast } from 'react-hot-toast';
+import { useEffect } from 'react';
 
 export default function App() {
   const [results, setResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchType, setSearchType] = useState<'google' | 'maps'>('google');
 
+  useEffect(() => {
+    // Initial health check
+    axios.get('/api/health')
+      .then(res => console.log('Server is healthy:', res.data))
+      .catch(err => console.error('Server health check failed:', err));
+  }, []);
+
   const handleSearch = async (params: SearchParams) => {
+    console.log('Initiating search with params:', params);
     setIsLoading(true);
     setSearchType(params.type);
     
     try {
+      // Check if server is up
+      try {
+        await axios.get('/api/health');
+      } catch (e) {
+        console.error('Server unreachable:', e);
+        throw new Error('O servidor backend não está respondendo. Tente recarregar a página.');
+      }
+
       const response = await axios.post('/api/search', params);
+      console.log('Search response received:', response.data);
       
       let data: any[] = [];
       if (params.type === 'google') {
