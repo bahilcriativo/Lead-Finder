@@ -18,25 +18,27 @@ async function startServer() {
   app.use(cors());
   app.use(express.json());
 
-  // API Routes
-  const apiRouter = express.Router();
-
-  apiRouter.get('/health', (req, res) => {
-    console.log('Health check requested');
-    res.json({ 
-      status: 'ok', 
-      time: new Date().toISOString(),
-      env: process.env.NODE_ENV || 'development'
-    });
+  // Global Request Logger
+  app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
   });
 
-  apiRouter.post('/search', async (req, res) => {
-    console.log('Search request received:', req.body);
+  // API Routes
+  app.get('/api/health', (req, res) => {
+    console.log('Health check hits direct route');
+    res.json({ status: 'ok', serverTime: new Date().toISOString() });
+  });
+
+  app.post('/api/search', async (req, res) => {
+    console.log('Search hits direct route:', req.body);
     const { token, type, audience, region, ddi, source } = req.body;
     const apiKey = token || process.env.SERPER_API_KEY;
 
-    if (!apiKey) {
-      return res.status(400).json({ error: 'Falta o token de acesso (SERPER_API_KEY).' });
+    if (!apiKey || apiKey === 'YOUR_SERPER_API_KEY' || apiKey.trim() === '') {
+      return res.status(401).json({ 
+        error: 'Token de acesso inválido ou ausente. Por favor, insira uma API Key válida do serper.dev no campo "Token de acesso".' 
+      });
     }
 
     try {
@@ -69,12 +71,16 @@ async function startServer() {
 
       res.json(response.data);
     } catch (error: any) {
-      console.error('Serper search error:', error.response?.data || error.message);
-      res.status(500).json({ error: 'Erro na busca. Verifique seu token.' });
+      if (error.response?.status === 403) {
+        return res.status(403).json({ 
+          error: 'A API Key fornecida foi rejeitada pelo Serper. Verifique se a chave está correta ou se você ainda possui créditos.' 
+        });
+      }
+      const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'Erro desconhecido na busca.';
+      console.error('Serper search error:', errorMsg);
+      res.status(error.response?.status || 500).json({ error: errorMsg });
     }
   });
-
-  app.use('/api', apiRouter);
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {

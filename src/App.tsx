@@ -52,8 +52,9 @@ export default function App() {
         toast.success(`Encontrados ${data.length} contatos!`);
       }
     } catch (error: any) {
-      console.error(error);
-      const msg = error.response?.data?.error || 'Erro ao conectar ao servidor.';
+      console.error('Frontend error capture:', error);
+      const rawMsg = error.response?.data?.error || error.message || 'Erro ao conectar ao servidor.';
+      const msg = typeof rawMsg === 'object' ? JSON.stringify(rawMsg) : String(rawMsg);
       toast.error(msg);
     } finally {
       setIsLoading(false);

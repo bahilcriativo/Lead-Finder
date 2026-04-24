@@ -34,14 +34,25 @@ export const SearchForm: React.FC<Props> = ({ onSearch, isLoading }) => {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div id="token-field">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Token de acesso:</label>
+          <div className="flex justify-between items-center mb-1">
+            <label className="block text-sm font-medium text-gray-700">Token de acesso:</label>
+            <a 
+              href="https://serper.dev" 
+              target="_blank" 
+              rel="noreferrer" 
+              className="text-xs text-blue-600 hover:underline"
+            >
+              Obter token grátis
+            </a>
+          </div>
           <input
             type="password"
-            placeholder="Digite seu token (Serper.dev)"
+            placeholder="Cole sua API Key do Serper.dev aqui"
             className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
             value={params.token}
             onChange={(e) => setParams({ ...params, token: e.target.value })}
           />
+          <p className="text-[10px] text-gray-400 mt-1">Sua chave é usada apenas para esta busca.</p>
         </div>
 
         <div id="search-type-field" className="bg-gray-50 p-3 rounded-lg flex gap-4">
